@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+audit_chain.json
+delta_chain.json
+*_manifest.json

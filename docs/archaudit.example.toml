@@ -1,0 +1,8 @@
+# theta, declared. This is how a team pays the cost the auditor can't see.
+[archaudit]
+budgets = { prod = 8.0, dev = 18.0 }     # structural unpaid per 1000 AST nodes
+roots = []                                # extra entry points (make DEAD forced)
+ignore = ["migrations", "generated"]      # path fragments to skip
+disable = []                              # detectors to turn off by name
+gate_dead = false                         # block on DEAD findings (reflection-free apps)
+extension_points = []                     # abstract bases with external implementers

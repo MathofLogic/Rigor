@@ -1,0 +1,10 @@
+[project]
+name = "rigor"
+version = "0.2.0"
+description = "The MathofLogic rigor harness: one carrier, many audit tools — every verdict priced, tiered, and sealed."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []                       # stdlib only (tomllib, ast, hashlib)
+
+[project.optional-dependencies]
+treesitter = ["tree-sitter>=0.21"]      # for the future multi-language frontend

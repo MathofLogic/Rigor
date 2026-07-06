@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Rigor Suite — Reference Instrument</title>
+<style>
+  :root{
+    --ink:#1c1714; --parch:#f3f1e8; --card:#fbfaf5; --teal:#1f5a54; --ox:#7c2128;
+    --gold:#9a7d2c; --green:#4a6a3a; --line:#d8d2c2; --dk:#11140f; --muted:#6a5d4f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--parch);color:var(--ink);
+    font-family:Georgia,"Lora","Times New Roman",serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased;}
+  .mono{font-family:"DejaVu Sans Mono",ui-monospace,Menlo,Consolas,monospace;}
+  .wrap{max-width:860px;margin:0 auto;padding:0 18px 80px;}
+  /* header */
+  header{background:var(--dk);color:#eef0e8;padding:26px 18px 22px;}
+  header .inner{max-width:860px;margin:0 auto;}
+  header .op{font-family:"DejaVu Sans Mono",monospace;color:var(--gold);letter-spacing:2px;font-size:13px;}
+  header h1{margin:8px 0 0;font-size:30px;font-weight:700;letter-spacing:-.5px;}
+  header h1 .em{color:var(--gold);font-style:italic;}
+  header p.sub{margin:8px 0 0;color:#b9c4ad;font-style:italic;font-size:14.5px;max-width:640px;}
+  header .tags{margin-top:14px;font-family:"DejaVu Sans Mono",monospace;font-size:11px;color:#7c9270;line-height:1.9;}
+  header .tags b{color:var(--gold);}
+  /* input */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-top:18px;}
+  .panel h2{margin:0 0 4px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);
+    font-family:"DejaVu Sans Mono",monospace;}
+  .panel .hint{font-size:13px;color:var(--muted);margin:0 0 10px;}
+  textarea{width:100%;min-height:170px;resize:vertical;padding:12px;border:1px solid var(--line);
+    border-radius:5px;font-family:Georgia,serif;font-size:14px;line-height:1.5;background:#fff;color:var(--ink);}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+  button{font-family:"DejaVu Sans Mono",monospace;font-size:13px;letter-spacing:.5px;cursor:pointer;
+    border:none;border-radius:5px;padding:11px 18px;transition:opacity .15s;}
+  button:disabled{opacity:.45;cursor:default;}
+  .btn-run{background:var(--teal);color:#fff;}
+  .btn-ghost{background:transparent;color:var(--teal);border:1px solid var(--teal);}
+  .btn-sm{padding:7px 12px;font-size:12px;}
+  .err{background:#f9ecec;border-left:3px solid var(--ox);color:#5a2024;padding:10px 12px;border-radius:4px;
+    margin-top:12px;font-size:13px;display:none;}
+  /* progress */
+  .prog{display:none;margin-top:16px;}
+  .stage{display:flex;align-items:center;gap:10px;margin:6px 0;font-family:"DejaVu Sans Mono",monospace;font-size:12px;color:var(--muted);}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cfc8b6;flex:0 0 auto;}
+  .stage.run .dot{background:var(--gold);animation:pulse 1s infinite;}
+  .stage.done .dot{background:var(--teal);}
+  .stage.done{color:var(--ink);}
+  @keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
+  /* results */
+  #results{margin-top:6px;}
+  .rcard{background:var(--card);border:1px solid var(--line);border-radius:6px;margin-top:16px;overflow:hidden;}
+  .rcard .rh{background:var(--teal);color:#eef4f1;padding:9px 14px;display:flex;justify-content:space-between;align-items:baseline;}
+  .rcard .rh .lt{font-weight:700;font-size:14px;font-family:"DejaVu Sans",sans-serif;}
+  .rcard .rh .ln{font-family:"DejaVu Sans Mono",monospace;font-size:12px;color:#d9c98a;letter-spacing:1px;}
+  .rcard .rb{padding:14px 16px;}
+  .rcard h4{margin:12px 0 4px;font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal);
+    font-family:"DejaVu Sans Mono",monospace;}
+  .rcard h4:first-child{margin-top:0;}
+  .rcard ul{margin:4px 0;padding-left:18px;}
+  .rcard li{margin:4px 0;font-size:14px;line-height:1.5;}
+  .rcard p{margin:4px 0;font-size:14px;}
+  .tag{font-family:"DejaVu Sans Mono",monospace;font-size:11px;font-weight:bold;padding:1px 5px;border-radius:3px;}
+  .tag.stipulated{color:#7a5e16;background:#f3e7c4;}
+  .tag.forced{color:#7c2128;background:#f3dada;}
+  .tag.presumed{color:#1f5a54;background:#d6e7e2;}
+  .tag.empirical{color:#3a5a2a;background:#dde9d2;}
+  .claimrow{margin:7px 0;padding-left:2px;border-left:2px solid var(--line);padding-left:10px;}
+  .claimrow .why{color:var(--muted);font-size:13px;display:block;margin-top:1px;}
+  .delta{background:#f9f1ee;border-left:3px solid var(--ox);}
+  .delta .rh{background:var(--ox);}
+  .delta .rh .ln{color:#f0cfa0;}
+  .confbox{background:#eef4f1;border-left:3px solid var(--teal);padding:10px 12px;border-radius:4px;margin-top:14px;
+    font-size:13px;color:#234;}
+  .raw{white-space:pre-wrap;font-family:"DejaVu Sans Mono",monospace;font-size:11.5px;background:#11140f;color:#cdd6c4;
+    padding:10px;border-radius:4px;overflow-x:auto;}
+  .disc{font-size:12px;color:var(--muted);margin-top:18px;border-top:1px solid var(--line);padding-top:12px;}
+  .saved{margin-top:22px;}
+  .saved h2{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+    font-family:"DejaVu Sans Mono",monospace;margin:0 0 8px;}
+  .saveditem{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card);
+    border:1px solid var(--line);border-radius:5px;padding:9px 12px;margin:6px 0;font-size:13px;}
+  .saveditem .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .saveditem .d{color:var(--muted);font-family:"DejaVu Sans Mono",monospace;font-size:11px;}
+  a.link{color:var(--teal);cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <div class="op">P / G &#8594; Q</div>
+    <h1>The Rigor <span class="em">Suite</span></h1>
+    <p class="sub">Reference instrument. Put a paper in &#8212; force out what it stipulated, what logic it presumed, what ontology it hid, and what must be true upstream for it to hold.</p>
+    <div class="tags">
+      &#8594; <b>[stipulated]</b> vs <b>[forced]</b> &nbsp;&middot;&nbsp; logic presumed &nbsp;&middot;&nbsp; hidden ontology &nbsp;&middot;&nbsp; theory-dependency &nbsp;&middot;&nbsp; overflow &nbsp;&middot;&nbsp; honesty delta
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Input</h2>
+    <p class="hint">Paste the paper &#8212; abstract plus key claims is enough; full text works too. The audit reads it through the Propagation Logic lens. This is interpretation, not a verdict.</p>
+    <textarea id="paper" placeholder="Paste abstract + introduction + central claims here..."></textarea>
+    <div class="controls">
+      <button class="btn-run" id="runBtn" onclick="runAudit()">Run Rigor Audit</button>
+      <button class="btn-ghost btn-sm" onclick="loadSample()">Load a sample claim</button>
+      <button class="btn-ghost btn-sm" id="exportBtn" onclick="exportCurrent()" style="display:none;">Export audit</button>
+    </div>
+    <div class="err" id="err"></div>
+    <div class="prog" id="prog">
+      <div class="stage" id="st1"><span class="dot"></span><span>Lenses L0&#8211;L2 &#183; claim typing, logic presumed, stipulated vs forced</span></div>
+      <div class="stage" id="st2"><span class="dot"></span><span>Lenses L3&#8211;L4 &#183; hidden ontology, theory-dependency graph</span></div>
+      <div class="stage" id="st3"><span class="dot"></span><span>Lenses L5&#8211;L7 &#183; reification, overflow, rigor profile, honesty delta</span></div>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="saved" id="savedWrap" style="display:none;">
+    <h2>Saved audits</h2>
+    <div id="savedList"></div>
+  </div>
+
+  <p class="disc">The Rigor Suite is a stipulated instrument built on the Propagation Logic frame. Its findings are disclosures to be checked, not verdicts to be trusted; every audit ends with its own confidence note. A paper resting on a hidden commitment may be entirely correct &#8212; the suite reports what was undisclosed, never that it is false.</p>
+</div>
+
+<script>
+const MODEL="claude-sonnet-4-6";
+let currentAudit=null;
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function $(id){return document.getElementById(id);}
+
+const PROTOCOL = `You are the Rigor Suite, a de-reification audit built on the Propagation Logic (PL) frame. You audit a scientific paper to surface its HIDDEN load — never to declare it false. A paper can be correct and still rest on undisclosed commitments; you report what was undisclosed.
+Core PL machinery you apply:
+- Tag claims: [stipulated] (chosen by convention/definition), [forced] (follows necessarily given stipulations+logic), [empirical] (asserted on measurement), [presumed] (inherited from a prior theory not re-established here).
+- The 0.5 test: for any binary claim, ask what 0.5 would mean; if coherent (partly true / in-between), the paper silently imposed bivalence (classical logic) on a continuous domain.
+- A=A trio: Absoluteness + Temporal Stability + Context Independence, which together force a value space to {0,1}. Assuming classical logic IS assuming this trio.
+- Reification: treating a stipulation as if forced/natural; or treating a calculational TOOL (Hilbert space, manifold, utility, probability measure) as FURNITURE OF REALITY. Predictive success licenses the tool, never the furniture.
+- DRAS: every quantity must carry its load history (scale, context, time, method, baseline); flag bare quantities and running couplings reported as constants.
+- Theory-dependency: trace what upstream theories must be true; each dependency may smuggle in a hidden commitment the paper inherits (e.g. a result is forced only if a presumed theory's A=A identity was ONTOLOGICAL, not mere bookkeeping; or an ontological claim that needs a Hilbert space treated as real somewhere in its foundations).
+- Four overflow modes (open conjecture, used as checklist): 1=no fixed point (self-referential/circular calibration); 2=load doubles with depth (combinatorial/regress, unverifiable base); 3=level collapse (the theory's object on its own level, model of the modeller); 4=no seed state (ungrounded foundations, no base case).
+Be specific to the actual paper text. Be concise. Output ONLY valid JSON, no markdown, no prose outside the JSON.`;
+
+async function callClaude(stageInstruction, paper){
+  const body={
+    model:MODEL, max_tokens:1000,
+    messages:[{role:"user", content: stageInstruction + "\n\n=== PAPER ===\n" + paper.slice(0,9000)}],
+    system: PROTOCOL
+  };
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+  });
+  if(!r.ok){throw new Error("API "+r.status);}
+  const data=await r.json();
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").trim();
+  return text;
+}
+function parseJSON(text){
+  let t=text.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const a=t.indexOf("{"), b=t.lastIndexOf("}");
+  if(a>=0&&b>a) t=t.slice(a,b+1);
+  return JSON.parse(t);
+}
+
+function tag(t){t=(t||"").toLowerCase();return '<span class="tag '+esc(t)+'">['+esc(t)+']</span>';}
+
+const STAGE1=`AUDIT STAGE 1 (lenses L0-L2). Return JSON exactly:
+{"load_bearing":["2-4 claims that if removed collapse the result"],
+"tags":[{"claim":"short","tag":"stipulated|forced|empirical|presumed","why":"one line"}],
+"logic_presumed":"classical|intuitionistic|paraconsistent|fuzzy|modal|quantum (+brief)",
+"half_test":"where 0.5 breaks a central binary, or 'holds: domain is genuinely binary'",
+"stipulations":["1-3 choices the paper presents as if necessary/natural"]}`;
+
+const STAGE2=`AUDIT STAGE 2 (lenses L3-L4). Return JSON exactly:
+{"hidden_ontology":[{"commitment":"what must exist & with what properties","slip":"tool-vs-furniture or substance/identity-realism note"}],
+"dependency_graph":[{"upstream":"presumed theory","stipulates":"what IT chose","inherited":"the hidden commitment this paper now rests on — name A=A-as-ontology or Hilbert-space-as-real explicitly if applicable"}]}`;
+
+const STAGE3=`AUDIT STAGE 3 (lenses L5-L7). Return JSON exactly:
+{"reifications":["bare quantities missing load history; constants that actually run"],
+"overflow":[{"mode":"1|2|3|4","trigger":"the structural feature that exposes it"}],
+"profile":{"stip_forced":"e.g. heavily stipulated / mostly forced","heaviest_commitment":"...","longest_chain":"...","dominant_overflow":"mode N or none"},
+"honesty_delta":["1-3 sentences the paper should ADD to disclose its load"],
+"audit_confidence":"how much is firm reading vs interpretation; what in the paper was unclear"}`;
+
+async function runAudit(){
+  const paper=$("paper").value.trim();
+  $("err").style.display="none";
+  if(paper.length<60){show("err","Paste a bit more — an abstract plus the central claims gives the audit something to work with.");return;}
+  $("runBtn").disabled=true; $("exportBtn").style.display="none";
+  $("results").innerHTML=""; $("prog").style.display="block";
+  ["st1","st2","st3"].forEach(s=>{$(s).className="stage";});
+  currentAudit={paper:paper.slice(0,300), ts:Date.now(), stages:{}};
+  try{
+    setStage("st1","run");
+    const s1=parseSafe(await callClaude(STAGE1,paper));
+    currentAudit.stages.s1=s1; renderStage1(s1); setStage("st1","done");
+
+    setStage("st2","run");
+    const s2=parseSafe(await callClaude(STAGE2,paper));
+    currentAudit.stages.s2=s2; renderStage2(s2); setStage("st2","done");
+
+    setStage("st3","run");
+    const s3=parseSafe(await callClaude(STAGE3,paper));
+    currentAudit.stages.s3=s3; renderStage3(s3); setStage("st3","done");
+
+    await saveAudit(currentAudit);
+    $("exportBtn").style.display="inline-block";
+  }catch(e){
+    show("err","Audit interrupted: "+esc(e.message)+". You can re-run; partial results above are kept. The protocol PDF lets you run the lenses by hand if needed.");
+  }finally{
+    $("runBtn").disabled=false;
+    setTimeout(()=>{$("prog").style.display="none";},600);
+  }
+}
+function parseSafe(text){ try{return parseJSON(text);}catch(e){return {__raw:text};} }
+function setStage(id,cls){$(id).className="stage "+cls;}
+function show(id,html){const e=$(id);e.innerHTML=html;e.style.display="block";}
+
+function card(title,ln,inner,cls){
+  return '<div class="rcard '+(cls||"")+'"><div class="rh"><span class="lt">'+title+'</span><span class="ln">'+ln+'</span></div><div class="rb">'+inner+'</div></div>';
+}
+function rawCard(title,ln,obj){return card(title,ln,'<div class="raw">'+esc(obj.__raw||JSON.stringify(obj,null,2))+'</div>');}
+function append(html){$("results").insertAdjacentHTML("beforeend",html);}
+
+function renderStage1(s){
+  if(s.__raw){append(rawCard("Foundations","L0&#8211;L2",s));return;}
+  let h="";
+  if(s.load_bearing){h+='<h4>Load-bearing claims</h4><ul>'+s.load_bearing.map(c=>'<li>'+esc(c)+'</li>').join("")+'</ul>';}
+  if(s.tags){h+='<h4>Claim typing</h4>'+s.tags.map(t=>'<div class="claimrow">'+tag(t.tag)+' '+esc(t.claim)+'<span class="why">'+esc(t.why)+'</span></div>').join("");}
+  if(s.logic_presumed){h+='<h4>Logic presumed &amp; applied</h4><p>'+esc(s.logic_presumed)+'</p>';}
+  if(s.half_test){h+='<h4>The 0.5 test</h4><p>'+esc(s.half_test)+'</p>';}
+  if(s.stipulations){h+='<h4>Stipulations dressed as necessities</h4><ul>'+s.stipulations.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';}
+  append(card("Foundations","L0&#8211;L2",h));
+}
+function renderStage2(s){
+  if(s.__raw){append(rawCard("Hidden ontology &amp; inheritance","L3&#8211;L4",s));return;}
+  let h="";
+  if(s.hidden_ontology){h+='<h4>Hidden ontological commitments</h4>'+s.hidden_ontology.map(o=>'<div class="claimrow"><b>'+esc(o.commitment)+'</b><span class="why">'+esc(o.slip)+'</span></div>').join("");}
+  if(s.dependency_graph){h+='<h4>Theory-dependency graph &#8212; what must be true upstream</h4>'+s.dependency_graph.map(d=>'<div class="claimrow"><span class="mono" style="color:#1f5a54;">'+esc(d.upstream)+'</span> &#8594; stipulates: '+esc(d.stipulates)+'<span class="why">inherited: '+esc(d.inherited)+'</span></div>').join("");}
+  append(card("Hidden ontology &amp; inheritance","L3&#8211;L4",h));
+}
+function renderStage3(s){
+  if(s.__raw){append(rawCard("Reification, overflow &amp; profile","L5&#8211;L7",s));return;}
+  let h="";
+  if(s.reifications){h+='<h4>Reifications / DRAS flags</h4><ul>'+s.reifications.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';}
+  if(s.overflow){h+='<h4>Overflow-mode exposure</h4>'+s.overflow.map(o=>'<div class="claimrow"><b>Mode '+esc(o.mode)+'</b> &#8212; '+esc(o.trigger)+'</div>').join("");}
+  if(s.profile){const p=s.profile;h+='<h4>Rigor profile (a vector, not a score)</h4><ul>'+
+    '<li><b>Stipulated&#8596;forced:</b> '+esc(p.stip_forced)+'</li>'+
+    '<li><b>Heaviest hidden commitment:</b> '+esc(p.heaviest_commitment)+'</li>'+
+    '<li><b>Longest dependency chain:</b> '+esc(p.longest_chain)+'</li>'+
+    '<li><b>Dominant overflow risk:</b> '+esc(p.dominant_overflow)+'</li></ul>';}
+  append(card("Reification, overflow &amp; profile","L5&#8211;L7",h));
+  let dh="";
+  if(s.honesty_delta){dh+='<h4 style="color:#7c2128;">What the paper should add to carry its load</h4><ul>'+s.honesty_delta.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';}
+  if(s.audit_confidence){dh+='<div class="confbox"><b>Audit confidence:</b> '+esc(s.audit_confidence)+'</div>';}
+  append(card("The Honesty Delta","L7",dh,"delta"));
+}
+
+/* ---------- persistence ---------- */
+async function saveAudit(a){
+  try{
+    const id="audit:"+a.ts;
+    await window.storage.set(id, JSON.stringify(a), false);
+    renderSaved();
+  }catch(e){/* storage optional */}
+}
+async function renderSaved(){
+  try{
+    const res=await window.storage.list("audit:", false);
+    const keys=(res&&res.keys)?res.keys:[];
+    if(!keys.length){$("savedWrap").style.display="none";return;}
+    $("savedWrap").style.display="block";
+    let html="";
+    const sorted=keys.slice().sort().reverse().slice(0,12);
+    for(const k of sorted){
+      let rec=null; try{const g=await window.storage.get(k,false); rec=g?JSON.parse(g.value):null;}catch(e){}
+      if(!rec) continue;
+      const d=new Date(rec.ts); const ds=d.toLocaleDateString()+" "+d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+      html+='<div class="saveditem"><span class="t">'+esc(rec.paper)+'&#8230;</span><span class="d">'+ds+'</span>'+
+        '<a class="link" onclick="reopen(\''+k+'\')">view</a></div>';
+    }
+    $("savedList").innerHTML=html;
+  }catch(e){$("savedWrap").style.display="none";}
+}
+async function reopen(k){
+  try{
+    const g=await window.storage.get(k,false); if(!g)return;
+    const rec=JSON.parse(g.value); currentAudit=rec;
+    $("results").innerHTML="";
+    if(rec.stages.s1)renderStage1(rec.stages.s1);
+    if(rec.stages.s2)renderStage2(rec.stages.s2);
+    if(rec.stages.s3)renderStage3(rec.stages.s3);
+    $("exportBtn").style.display="inline-block";
+    window.scrollTo({top:$("results").offsetTop-20,behavior:"smooth"});
+  }catch(e){}
+}
+function exportCurrent(){
+  if(!currentAudit)return;
+  const blob=new Blob([JSON.stringify(currentAudit,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="rigor-audit-"+currentAudit.ts+".json";
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+
+function loadSample(){
+  $("paper").value="Abstract: We prove that any rational agent with complete and transitive preferences over a fixed choice set X admits a real-valued utility function representing those preferences, and we use this to derive a unique equilibrium in our market model. Preferences are assumed stable. Each alternative in X is treated as a well-defined element. Our equilibrium existence result follows from a fixed-point argument over the resulting utility space.";
+}
+renderSaved();
+</script>
+</body>
+</html>
