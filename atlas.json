@@ -1,0 +1,7 @@
+{
+  "registry": {"import": ["rigor_checks"],
+               "attr": "rigor_checks:CHECKS"},
+  "mutate": ["auditkit/core.py", "auditkit/detectors.py",
+             "auditkit/resistance.py", "auditkit/delta.py",
+             "auditkit/runner.py", "benchmark.py", "rigor_checks.py"]
+}

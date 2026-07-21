@@ -62,6 +62,53 @@ with tempfile.TemporaryDirectory() as d:
     data = json.loads(ch.read_text()); data[0]["a"] = 99
     ch.write_text(json.dumps(data))
     check("chain replays intact & breaks on tamper", intact and not replay(ch))
+    try:
+        seal({"a": 3}, ch)
+        check("sealing onto broken history is refused", False)
+    except ValueError:
+        check("sealing onto broken history is refused", True)
+
+print("\nHISTORY (the committed manifest replays without its writer)")
+MANDIR = ROOT / "manifests"
+MANDIR.mkdir(exist_ok=True)
+MP = MANDIR / "rigor_manifest.json"
+if MP.exists():
+    check("committed rigor_manifest.json replays", bool(replay(MP)),
+          "possible tampering — file preserved as evidence")
+
+print("\nLEDGER (root claims.py backed by rigor_checks.py; every check "
+      "runs here)")
+import claims as _claims
+import rigor_checks as _rchk
+for _name, _fn in _rchk.CHECKS.items():
+    try:
+        check(_name, _fn() is True)
+    except Exception as _e:
+        check(_name, False, f"{type(_e).__name__}: {_e}")
+_ledgered = {c["check"] for _, cs in _claims.SECTIONS
+             for c in cs if c.get("check")}
+check("ledgered checks == registry (no dangling, no orphans)",
+      _ledgered == set(_rchk.CHECKS))
+
+# seal this run's verdict onto the history (append-if-changed: the
+# chain records events, not invocations)
+if not fails:
+    _body = {"event": "build-gate", "checks_green": True,
+             "ledger_checks": sorted(_rchk.CHECKS)}
+    _prior = json.loads(MP.read_text()) if MP.exists() else []
+    _last = {k: v for k, v in (_prior[-1] if _prior else {}).items()
+             if k not in ("sha", "sha_prev")}
+    if _last != _body:
+        seal(dict(_body), MP)
+    check("run sealed onto replayable history", bool(replay(MP)))
+
+print("""
+NOT claimed: that these detectors define code health — they are a
+    finite, priced probe of it.
+NOT claimed: that a green build makes the findings matter — the
+    harness prices structure and cost; relevance is the caller's.
+NOT claimed: any comparison with other reviewers — the benchmark's
+    comparison column is a declared stub until filled with real runs.""")
 
 print("\n" + ("BUILD PASSED" if not fails else f"BUILD FAILED: {fails}"))
 sys.exit(1 if fails else 0)

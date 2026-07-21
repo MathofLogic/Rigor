@@ -123,6 +123,14 @@ REVIEW_NOTE = set()
 def seal(verdict_dict, chain_path):
     p = pathlib.Path(chain_path)
     chain = json.loads(p.read_text()) if p.exists() else []
+    # THE HISTORY HEARING: appending onto a chain that does not replay
+    # extends a lie. Verify the shipped history by seal arithmetic
+    # before minting anything onto it; a broken file is evidence and
+    # must not be written over.
+    if chain and replay_list(chain) is not True:
+        raise ValueError(f"existing chain at {chain_path} does not "
+                         f"replay — possible tampering; file preserved, "
+                         f"sealing refused")
     prev = chain[-1]["sha"] if chain else "GENESIS"
     body = json.dumps(verdict_dict, sort_keys=True)
     verdict_dict["sha_prev"] = prev
@@ -130,6 +138,24 @@ def seal(verdict_dict, chain_path):
     chain.append(verdict_dict)
     p.write_text(json.dumps(chain, indent=1))
     return verdict_dict
+
+
+def replay_list(chain):
+    """Replay an in-memory chain; True/False/None (not a chain)."""
+    if not isinstance(chain, list) or not all(
+            isinstance(g, dict) and "sha" in g and "sha_prev" in g
+            for g in chain):
+        return None
+    prev = "GENESIS"
+    for g in chain:
+        body = json.dumps({k: v for k, v in g.items()
+                           if k not in ("sha", "sha_prev")},
+                          sort_keys=True)
+        want = hashlib.sha256((prev + body).encode()).hexdigest()[:16]
+        if g["sha_prev"] != prev or g["sha"] != want:
+            return False
+        prev = g["sha"]
+    return True
 
 
 def replay(chain_path):

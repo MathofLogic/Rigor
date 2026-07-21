@@ -39,7 +39,12 @@ def determinism(root, n=3):
 
 
 if __name__ == "__main__":
-    REPOS = [
+    if len(sys.argv) > 1:
+        # the gate (or anyone) can point the apparatus at any repos —
+        # coverage of this file is earned by running it, not implied
+        REPOS = [(pathlib.Path(a).name, a) for a in sys.argv[1:]]
+    else:
+        REPOS = [
         ("more_itertools", "/tmp/cal/more-itertools/more_itertools"),
         ("toolz", "/tmp/cal/toolz/toolz"),
         ("tqdm", "/tmp/cal/tqdm/tqdm"),
@@ -51,18 +56,32 @@ if __name__ == "__main__":
           f"{'finds':>7}{'determ.':>9}{'CodeRabbit':>12}")
     print("  " + "-" * 70)
     all_det = True
+    profiled = 0
     for name, path in REPOS:
         try:
+            pp = pathlib.Path(path)
+            if not pp.is_dir() or not any(pp.rglob("*.py")):
+                raise FileNotFoundError(
+                    "no python source at this path — a measurement "
+                    "of nothing is not a measurement")
             p = profile(path)
             det = determinism(path)
             all_det = all_det and det
+            profiled += 1
             print(f"  {name:16}{p['max_R']:>7}{p['stiff']:>7}{p['density']:>9.1f}"
                   f"{p['findings']:>7}{('yes' if det else 'NO'):>9}{'(not run)':>12}")
         except Exception as e:
             print(f"  {name:16}  ERR {type(e).__name__}: {e}")
     print("  " + "-" * 70)
+    if profiled == 0:
+        # a determinism line over zero measurements would be the
+        # vacuous green this repo exists to refuse
+        print("  determinism: NOT MEASURED — no repo profiled; "
+              "this run proves nothing")
+        sys.exit(1)
     print(f"  determinism (re-run byte-identical): {'ALL PASS' if all_det else 'FAILED'} "
           "— FORCED; an LLM reviewer cannot guarantee this")
     print("  CodeRabbit column: DECLARED STUB. Not run here. To complete the")
     print("  comparison, run CodeRabbit on the same repos/PRs and populate it.")
     print("  No 'outperforms' claim is made until that column is filled.")
+    sys.exit(0 if all_det else 1)
